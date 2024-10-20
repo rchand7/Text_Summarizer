@@ -1,20 +1,20 @@
 import streamlit as st
 from transformers import pipeline
-import os
 
 # Set up the summarization models
 MODEL_OPTIONS = {
-    "BART": "facebook/bart-large-cnn",
-    "T5": "t5-small",
-    "Pegasus": "google/pegasus-xsum"
+    "BART (Base)": "facebook/bart-base",
+    "T5 (Small)": "t5-small",
+    "Pegasus (XSUM)": "google/pegasus-xsum"
 }
 
 # Load the selected summarization model
+@st.cache_resource
 def load_model(model_name):
-    return pipeline("summarization", model=model_name)
+    return pipeline("summarization", model=model_name, device=-1)  # Force CPU usage
 
 # Streamlit app layout and features
-st.set_page_config(page_title="Text Summarization App", layout="wide")
+st.set_page_config(page_title="Enhanced Text Summarization App", layout="wide")
 
 # App Title
 st.title("Enhanced Text Summarization App")
@@ -24,28 +24,16 @@ st.write("Summarize text using different models and customize the output!")
 model_choice = st.sidebar.selectbox("Select Summarization Model", list(MODEL_OPTIONS.keys()))
 model = load_model(MODEL_OPTIONS[model_choice])
 
-# File Upload Section
-st.subheader("Upload a text file or manually input text")
-
-# File uploader for text files
-uploaded_file = st.file_uploader("Choose a text file", type="txt")
-
 # Input text area
-input_text = st.text_area("Or enter text to summarize manually:", height=250)
+input_text = st.text_area("Enter text to summarize:", height=250)
 
 # Parameters for controlling summary length
-max_length = st.sidebar.slider("Maximum summary length:", 50, 300, 130)
-min_length = st.sidebar.slider("Minimum summary length:", 20, 100, 30)
+max_length = st.sidebar.slider("Maximum summary length:", 50, 800, 350)
+min_length = st.sidebar.slider("Minimum summary length:", 20, 300, 130)
 
-# Extract the text from the uploaded file, if available
-if uploaded_file is not None:
-    input_text = uploaded_file.read().decode("utf-8")
-    st.write(f"**Word Count (Uploaded Text):** {len(input_text.split())} words")
-    st.write(input_text)
-
-# Show word count for manually entered input text
-elif input_text:
-    st.write(f"**Word Count (Input Text):** {len(input_text.split())} words")
+# Show word count for input text
+if input_text:
+    st.write(f"**Word Count (Input):** {len(input_text.split())} words")
 
 # Button to trigger summarization
 if st.button("Summarize"):
@@ -62,13 +50,10 @@ if st.button("Summarize"):
         st.write(f"**Word Count (Summary):** {len(summarized_text.split())} words")
 
         # Option to save the summary as a text file
-        if st.button("Download Summary"):
-            with open("summary.txt", "w") as f:
-                f.write(summarized_text)
-            st.download_button(label="Click to download summary", data=summarized_text, file_name="summary.txt")
+        st.download_button(label="Click to download summary", data=summarized_text, file_name="summary.txt", mime="text/plain")
 
     else:
-        st.write("Please upload a text file or enter some text to summarize.")
+        st.write("Please enter some text to summarize.")
 
 # Dark/Light Mode Toggle
 theme_toggle = st.sidebar.checkbox("Dark Mode")
@@ -80,5 +65,3 @@ else:
 # Footer
 st.write("---")
 st.write("Developed by Rohit Chand")
-
-  
